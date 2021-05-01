@@ -2,7 +2,8 @@
 // compatible API routes.
 
 const express = require('express');
-const { default: ParseServer, ParseGraphQLServer } = require('parse-server');
+const ParseServer = require('parse-server').default;
+const ParseGraphQLServer = require('parse-server').ParseGraphQLServer;
 const path = require('path');
 const args = process.argv || [];
 const test = args.some(arg => arg.includes('jasmine'));
@@ -35,7 +36,15 @@ app.use('/public', express.static(path.join(__dirname, '/public')));
 const mountPath = process.env.PARSE_MOUNT || '/parse';
 if (!test) {
   const api = new ParseServer(config);
-  app.use(mountPath, api);
+  app.use(mountPath, api.app);
+
+  const parseGraphQLServer = new ParseGraphQLServer(
+    api,
+    {
+      graphQLPath: '/graphql'
+    }
+  );
+  parseGraphQLServer.applyGraphQL(app);
 }
 
 app.get('/', function (req, res) {
@@ -50,14 +59,6 @@ if (!test) {
   });
   // This will enable the Live Query real-time server
   ParseServer.createLiveQueryServer(httpServer);
-
-  const parseGraphQLServer = new ParseGraphQLServer(
-    parseServer,
-    {
-      graphQLPath: '/graphql'
-    }
-  );
-  parseGraphQLServer.applyGraphQL(app);
 }
 
 module.exports = {
