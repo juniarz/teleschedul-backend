@@ -2,7 +2,7 @@
 // compatible API routes.
 
 const express = require('express');
-const ParseServer = require('parse-server').ParseServer;
+const { default: ParseServer, ParseGraphQLServer } = require('parse-server');
 const path = require('path');
 const args = process.argv || [];
 const test = args.some(arg => arg.includes('jasmine'));
@@ -38,15 +38,8 @@ if (!test) {
   app.use(mountPath, api);
 }
 
-// Parse Server plays nicely with the rest of your web routes
 app.get('/', function (req, res) {
-  res.status(200).send('I dream of being a website.  Please star the parse-server repo on GitHub!');
-});
-
-// There will be a test page available on the /test path of your server url
-// Remove this before launching your app
-app.get('/test', function (req, res) {
-  res.sendFile(path.join(__dirname, '/public/test.html'));
+  res.status(404);
 });
 
 const port = process.env.PORT || 1337;
@@ -57,6 +50,14 @@ if (!test) {
   });
   // This will enable the Live Query real-time server
   ParseServer.createLiveQueryServer(httpServer);
+
+  const parseGraphQLServer = new ParseGraphQLServer(
+    parseServer,
+    {
+      graphQLPath: '/graphql'
+    }
+  );
+  parseGraphQLServer.applyGraphQL(app);
 }
 
 module.exports = {
